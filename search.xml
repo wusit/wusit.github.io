@@ -1,6 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Minio Java Demo</title>
+    <url>/2021/06/29/Minio%20Java%20Demo/</url>
+    <content><![CDATA[<p>Minio JAVA 实现示例</p>
+<span id="more"></span>
+
+<h2 id="Minio-Java-Demo"><a href="#Minio-Java-Demo" class="headerlink" title="Minio Java Demo"></a>Minio Java Demo</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * MinioConfig</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Administrator</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/6/18 16:28</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@ConfigurationProperties(prefix = &quot;minio&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MinioConfig</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String endpoint;</span><br><span class="line">    <span class="keyword">private</span> String accessKey;</span><br><span class="line">    <span class="keyword">private</span> String secretKey;    </span><br><span class="line">    <span class="keyword">private</span> String bucketName;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * MinioComponent</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableConfigurationProperties(&#123;MinioConfig.class&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MinioComponent</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> MinioConfig config;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MinioComponent</span><span class="params">(MinioConfig minIo)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.config = minIo;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> MinioClient instance;</span><br><span class="line">    <span class="meta">@PostConstruct</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.instance = MinioClient</span><br><span class="line">                .builder()</span><br><span class="line">                .endpoint(config.getEndpoint())</span><br><span class="line">                .credentials(config.getAccessKey(), config.getSecretKey())</span><br><span class="line">                .build();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 文件上传</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(MultipartFile file)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            String filename = file.getOriginalFilename();</span><br><span class="line">            SimpleDateFormat sdf = <span class="keyword">new</span> SimpleDateFormat(<span class="string">&quot;yyyyMMdd&quot;</span>);</span><br><span class="line">            <span class="comment">// 设置存储对象名称</span></span><br><span class="line">            String objectName = sdf.format(<span class="keyword">new</span> Date()) + <span class="string">&quot;/&quot;</span> + filename;</span><br><span class="line">            <span class="comment">// 使用putObject上传一个文件到存储桶中</span></span><br><span class="line">            PutObjectArgs putObjectArgs = PutObjectArgs.builder()</span><br><span class="line">                    .bucket(config.getBucketName())</span><br><span class="line">                    .object(objectName)</span><br><span class="line">                    .contentType(file.getContentType())</span><br><span class="line">                    .stream(file.getInputStream(), file.getSize(), ObjectWriteArgs.MIN_MULTIPART_SIZE).build();</span><br><span class="line">            Object result = instance.putObject(putObjectArgs);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * MinioController</span></span><br><span class="line"><span class="comment"> * 文件上传</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@PostMapping(&quot;/upload&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">upload</span><span class="params">(<span class="meta">@RequestParam(&quot;file&quot;)</span>MultipartFile file)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.component.putObject(file);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <tags>
+        <tag>Minio</tag>
+        <tag>SpringBoot</tag>
+        <tag>JAVA</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis和Zookeeper分布式锁</title>
     <url>/2021/06/29/Redis%E5%92%8CZookeeper%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/</url>
     <content><![CDATA[<p>记录两种分布式锁的实现区别</p>
@@ -67,8 +88,8 @@
 </ul>
 ]]></content>
       <tags>
-        <tag>JAVA</tag>
         <tag>SpringBoot</tag>
+        <tag>JAVA</tag>
       </tags>
   </entry>
   <entry>
