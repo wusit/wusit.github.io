@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://wusit.github.io/sitemap.xml
