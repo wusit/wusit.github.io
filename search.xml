@@ -1,6 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Swoole Tcp粘包</title>
+    <url>/2021/07/22/TCP%E7%B2%98%E5%8C%85/</url>
+    <content><![CDATA[<p>研究Swoole TCP粘包解决方案</p>
+<span id="more"></span>
+
+<h3 id="TCP粘包"><a href="#TCP粘包" class="headerlink" title="TCP粘包"></a>TCP粘包</h3><p>假设客户端分别发送了两个数据包D1和D2给服务端，由于服务端一次读取到的字节数是不确定的，故可能存在以下几种情况。</p>
+<ul>
+<li>服务端分两次读取到了两个独立的数据包，分别是D1和D2，没有粘包和拆包；</li>
+<li>服务端一次接收到了两个数据包，D1和D2粘合在一起，被称为TCP粘包；</li>
+<li>服务端分两次读取到了两个数据包，第一次读取到了完整的D1包和D2包的部分内容，第二次读取到了D2包的剩余内容，这被称为TCP拆包；</li>
+<li>服务端分两次读取到了两个数据包，第一次读取到了D1包的部分内容D1_1，第二次读取到了D1包的剩余内容D1_2和D2包的整包。</li>
+<li>如果此时服务端TCP接收滑窗非常小，而数据包D1和D2比较大，很有可能会发生第五种可能，即服务端分多次才能将D1和D2包接收完全，期间发生多次拆包。</li>
+</ul>
+<p>归根到底，会发生粘包或半包的问题，原因在于服务端不知道客户端发过来的数据一个包有多大。所以兵来将挡，我们只需要让服务端知道每个业务层包的边界，事情就迎刃而解了。这里就需要 2 个操作来解决：</p>
+<p>－ 分包：Server 收到了多个数据包，需要拆分数据包<br>－ 合包：Server 收到的数据只是包的一部分，需要缓存数据，合并成完整的包</p>
+<p>就因为这个问题，所以 TCP 网络通信时需要设定通信协议。常见的 TCP 通用网络通信协议有 HTTP、HTTPS、FTP、SMTP、POP3、IMAP、SSH、Redis、Memcache、MySQL 。</p>
+<p>除了通用协议外还可以自定义协议。<strong>重点来了：</strong>Swoole 支持了 2 种类型的自定义网络通信协议： <strong>EOF结束符协议</strong> 和 <strong>固定包头+包体协议</strong>。</p>
+<p><strong>1、EOF结束符协议</strong></p>
+<p>1)解决分包与合包</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set([</span><br><span class="line">    <span class="string">&#x27;max_wait_time&#x27;</span>=&gt;<span class="number">60</span>,</span><br><span class="line">    <span class="string">&#x27;reload_async&#x27;</span>=&gt;<span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_max_request&#x27;</span>=&gt;<span class="number">100</span>,</span><br><span class="line">    <span class="string">&#x27;open_eof_split&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_eof&#x27;</span> =&gt; <span class="string">&quot;abc&quot;</span>,</span><br><span class="line">]);</span><br></pre></td></tr></table></figure>
+
+<p>看上面两个红色的配置：</p>
+<p><strong>open_eof_split：启用 EOF 自动分包</strong></p>
+<p>这个参数启用后，底层会从数据包中间查找 EOF，并拆分数据包。onReceive 每次仅收到一个以 EOF 字串结尾的数据包。</p>
+<p><strong>package_eof：设置 EOF 字符串。</strong></p>
+<p>这个配置需要与与 open_eof_check 或者 open_eof_split 配合使用，并且最大只允许传入 8 个字节的字符串。</p>
+<p>根据以上的配置进行实验：</p>
+<p>客户端发送两个包，分别是包1：123abc456a，包2：bc789abc</p>
+<p>服务端则触发了三个onReceive事件，收到的data分别是：123abc / 456abc / 789abc</p>
+<p>是不是很神奇，swoole底层根据package_eof配置设置的结束符帮我们把客户端发过来的数据包进行分包与合包，让我们在onRecieve业务层拿到的数据都是完整的业务数据包。但是，方便的同时带来的代价就是效率较低。open_eof_split这个配置让swoole需要遍历整个数据包的内容，查找 EOF，因此会消耗大量 CPU 资源。假设每个数据包为 2M，每秒 10000 个请求，这可能会产生 20G 条 CPU 字符匹配指令。</p>
+<p>为了解决这个问题，我们一般让swoole帮我们解决分包问题，合包由我们在业务代码层面进行处理。接下来，请大家往下阅读。</p>
+<p>2)只解决分包</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set([</span><br><span class="line">    <span class="string">&#x27;max_wait_time&#x27;</span>=&gt;<span class="number">60</span>,</span><br><span class="line">    <span class="string">&#x27;reload_async&#x27;</span>=&gt;<span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_max_request&#x27;</span>=&gt;<span class="number">100</span>,</span><br><span class="line">    <span class="string">&#x27;open_eof_check&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_eof&#x27;</span> =&gt; <span class="string">&quot;abc&quot;</span>,</span><br><span class="line">]);</span><br></pre></td></tr></table></figure>
+
+<p>这里的两个红包配置，与上面不同的是这里用的是open_eof_check，而不是open_eof_split。</p>
+<p><strong>open_eof_check：打开 EOF 检测【默认值：false】</strong></p>
+<p>此选项将检测客户端连接发来的数据，<strong>当数据包结尾是指定的字符串时才会投递给 Worker 进程</strong>。否则会一直拼接数据包，直到超过缓存区或者超时才会中止。当出错时底层会认为是恶意连接，丢弃数据并强制关闭连接。</p>
+<p>注意：此配置仅对 STREAM(流式的) 类型的 Socket 有效，如 TCP 、Unix Socket Stream。EOF 检测不会从数据中间查找 eof 字符串，所以 Worker 进程可能会同时收到多个数据包。</p>
+<p>根据以上的配置进行实验：</p>
+<p>客户端发送两个包，分别是包1：123abc456a，包2：bc789abc</p>
+<p>服务端则触发了一个onReceive事件，收到的data是：123abc456abc789abc</p>
+<p><font color="red">看到与open_eof_split的区别没？我们在onRecieve收到的是多个业务数据包合并在一样的数据，swoole保证提交到业务层是一个或多个完整的数据包，我们需要在业务层用explode()进行拆分。虽然需要我们额外的拆分动作，但这一切都是值得的，因为swoole效率高出了好多，因为swoole只检查数据包结尾是否是指定的eof字符串。</font></p>
+<p><strong>2、固定包头+包体协议</strong></p>
+<p>固定包头的方法非常通用，在服务器端程序中经常能看到。这种协议的特点是一个数据包总是由包头 + 包体 2 部分组成。包头由一个字段指定了包体或整个包的长度，长度一般是使用 2 字节 /4 字节整数来表示。服务器收到包头后，可以根据长度值来精确控制需要再接收多少数据就是完整的数据包。Swoole 的配置可以很好的支持这种协议，可以灵活地设置 4 项参数应对所有情况。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&quot;0.0.0.0&quot;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set(<span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;open_length_check&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_max_length&#x27;</span> =&gt; <span class="number">81920</span>,</span><br><span class="line">    <span class="string">&#x27;package_length_type&#x27;</span> =&gt; <span class="string">&#x27;n&#x27;</span>, <span class="comment">//see php pack()</span></span><br><span class="line">    <span class="string">&#x27;package_length_offset&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line">    <span class="string">&#x27;package_body_offset&#x27;</span> =&gt; <span class="number">2</span>,</span><br><span class="line">));</span><br></pre></td></tr></table></figure>
+
+<p>让我们一起了解这些配置的含义：</p>
+<p><strong>open_length_check：打开包长检测特性【默认值：false】</strong></p>
+<p>长度检测协议，只需要计算一次长度，数据处理仅进行指针偏移，性能非常高，推荐使用。</p>
+<p><strong>pack_max_length：设置最大数据包尺寸，单位为字节。【默认值：2M 即 2 * 1024 * 1024，最小值为 64K】（此参数不宜设置过大，否则会占用很大的内存）</strong></p>
+<p>－－open_length_check：当发现包长度超过 package_max_length，将直接丢弃此数据，并关闭连接，不会占用任何内存；<br>－－open_eof_check：因为无法事先得知数据包长度，所以收到的数据还是会保存到内存中，持续增长。当发现内存占用已超过 package_max_length 时，将直接丢弃此数据，并关闭连接；<br>－－open_http_protocol：GET 请求最大允许 8K，而且无法修改配置。POST 请求会检测 Content-Length，如果 Content-Length 超过 package_max_length，将直接丢弃此数据，发送 http 400 错误，并关闭连接；</p>
+<p><strong>package_length_type：长度值的类型，接受一个字符参数，与 PHP 的 pack 函数一致。</strong></p>
+]]></content>
+      <tags>
+        <tag>swoole</tag>
+        <tag>php</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Minio Java Demo</title>
     <url>/2021/06/29/Minio%20Java%20Demo/</url>
     <content><![CDATA[<p>Minio JAVA 实现示例</p>
