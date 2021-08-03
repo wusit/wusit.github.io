@@ -25,22 +25,21 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"wusit.github.io","root":"/","images":"/images","scheme":"Pisces","version":"8.2.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
-<meta name="description" content="研究Swoole TCP粘包解决方案">
+<meta name="description" content="记录PHP开发过程中遇到的“坑”，及其过程中忽略的知识点">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Swoole Tcp粘包">
-<meta property="og:url" content="https://wusit.github.io/2021/07/22/TCP%E7%B2%98%E5%8C%85/index.html">
+<meta property="og:title" content="记开发过程的查缺补漏">
+<meta property="og:url" content="https://wusit.github.io/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/index.html">
 <meta property="og:site_name" content="Wu&#39;s blog">
-<meta property="og:description" content="研究Swoole TCP粘包解决方案">
+<meta property="og:description" content="记录PHP开发过程中遇到的“坑”，及其过程中忽略的知识点">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-07-22T07:53:03.000Z">
-<meta property="article:modified_time" content="2021-07-22T07:54:59.102Z">
+<meta property="article:published_time" content="2021-08-03T09:24:02.000Z">
+<meta property="article:modified_time" content="2021-08-03T09:26:23.860Z">
 <meta property="article:author" content="Jack Wu">
-<meta property="article:tag" content="swoole">
-<meta property="article:tag" content="php">
+<meta property="article:tag" content="PHP">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://wusit.github.io/2021/07/22/TCP%E7%B2%98%E5%8C%85/">
+<link rel="canonical" href="https://wusit.github.io/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/">
 
 
 <script class="page-configurations">
@@ -52,7 +51,7 @@
     lang   : 'zh-CN'
   };
 </script>
-<title>Swoole Tcp粘包 | Wu's blog</title>
+<title>记开发过程的查缺补漏 | Wu's blog</title>
   
 
   <script>
@@ -199,7 +198,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP%E7%B2%98%E5%8C%85"><span class="nav-text">TCP粘包</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0PHP%E8%B8%A9%E5%9D%91"><span class="nav-text">记PHP踩坑</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A2%AB%E4%BA%BA%E6%89%93%E6%AD%BB%E7%B3%BB%E5%88%97%E4%B8%80-var-dump-1%E2%80%A69"><span class="nav-text">被人打死系列一:  var_dump(1…9)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A2%AB%E4%BA%BA%E6%89%93%E6%AD%BB%E7%B3%BB%E5%88%97%E4%BA%8C%EF%BC%9A"><span class="nav-text">被人打死系列二：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A2%AB%E4%BA%BA%E6%89%93%E6%AD%BB%E7%B3%BB%E5%88%97%E4%B8%89%EF%BC%9Aprint%E4%B8%8D%E6%98%AF%E5%87%BD%E6%95%B0"><span class="nav-text">被人打死系列三：print不是函数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%9B%8B%E7%96%BC%E7%B3%BB%E5%88%97%EF%BC%9Astrtotime"><span class="nav-text">蛋疼系列：strtotime</span></a></li></ol></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -272,7 +271,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://wusit.github.io/2021/07/22/TCP%E7%B2%98%E5%8C%85/">
+    <link itemprop="mainEntityOfPage" href="https://wusit.github.io/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpeg">
@@ -285,7 +284,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Swoole Tcp粘包
+          记开发过程的查缺补漏
         </h1>
 
         <div class="post-meta-container">
@@ -297,7 +296,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-07-22 15:53:03 / 修改时间：15:54:59" itemprop="dateCreated datePublished" datetime="2021-07-22T15:53:03+08:00">2021-07-22</time>
+      <time title="创建时间：2021-08-03 17:24:02 / 修改时间：17:26:23" itemprop="dateCreated datePublished" datetime="2021-08-03T17:24:02+08:00">2021-08-03</time>
     </span>
 
   
@@ -316,8 +315,8 @@
     </span>
     <span class="post-meta-item-text">Valine：</span>
   
-    <a title="valine" href="/2021/07/22/TCP%E7%B2%98%E5%8C%85/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/22/TCP%E7%B2%98%E5%8C%85/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -329,14 +328,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.4k</span>
+      <span>2.1k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>2 分钟</span>
     </span>
 </div>
 
@@ -347,56 +346,17 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>研究Swoole TCP粘包解决方案</p>
+        <p>记录PHP开发过程中遇到的“坑”，及其过程中忽略的知识点</p>
 <span id="more"></span>
 
-<h3 id="TCP粘包"><a href="#TCP粘包" class="headerlink" title="TCP粘包"></a>TCP粘包</h3><p>假设客户端分别发送了两个数据包D1和D2给服务端，由于服务端一次读取到的字节数是不确定的，故可能存在以下几种情况。</p>
-<ul>
-<li>服务端分两次读取到了两个独立的数据包，分别是D1和D2，没有粘包和拆包；</li>
-<li>服务端一次接收到了两个数据包，D1和D2粘合在一起，被称为TCP粘包；</li>
-<li>服务端分两次读取到了两个数据包，第一次读取到了完整的D1包和D2包的部分内容，第二次读取到了D2包的剩余内容，这被称为TCP拆包；</li>
-<li>服务端分两次读取到了两个数据包，第一次读取到了D1包的部分内容D1_1，第二次读取到了D1包的剩余内容D1_2和D2包的整包。</li>
-<li>如果此时服务端TCP接收滑窗非常小，而数据包D1和D2比较大，很有可能会发生第五种可能，即服务端分多次才能将D1和D2包接收完全，期间发生多次拆包。</li>
-</ul>
-<p>归根到底，会发生粘包或半包的问题，原因在于服务端不知道客户端发过来的数据一个包有多大。所以兵来将挡，我们只需要让服务端知道每个业务层包的边界，事情就迎刃而解了。这里就需要 2 个操作来解决：</p>
-<p>－ 分包：Server 收到了多个数据包，需要拆分数据包<br>－ 合包：Server 收到的数据只是包的一部分，需要缓存数据，合并成完整的包</p>
-<p>就因为这个问题，所以 TCP 网络通信时需要设定通信协议。常见的 TCP 通用网络通信协议有 HTTP、HTTPS、FTP、SMTP、POP3、IMAP、SSH、Redis、Memcache、MySQL 。</p>
-<p>除了通用协议外还可以自定义协议。<strong>重点来了：</strong>Swoole 支持了 2 种类型的自定义网络通信协议： <strong>EOF结束符协议</strong> 和 <strong>固定包头+包体协议</strong>。</p>
-<p><strong>1、EOF结束符协议</strong></p>
-<p>1)解决分包与合包</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set([</span><br><span class="line">    <span class="string">&#x27;max_wait_time&#x27;</span>=&gt;<span class="number">60</span>,</span><br><span class="line">    <span class="string">&#x27;reload_async&#x27;</span>=&gt;<span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_max_request&#x27;</span>=&gt;<span class="number">100</span>,</span><br><span class="line">    <span class="string">&#x27;open_eof_split&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_eof&#x27;</span> =&gt; <span class="string">&quot;abc&quot;</span>,</span><br><span class="line">]);</span><br></pre></td></tr></table></figure>
+<h2 id="记PHP踩坑"><a href="#记PHP踩坑" class="headerlink" title="记PHP踩坑"></a>记PHP踩坑</h2><h5 id="被人打死系列一-var-dump-1…9"><a href="#被人打死系列一-var-dump-1…9" class="headerlink" title="被人打死系列一:  var_dump(1…9)"></a>被人打死系列一:  var_dump(1…9)</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">本问题实质是词法分析阶段的问题</span><br><span class="line"><span class="number">1.</span>.<span class="number">.9</span>会被依次接受为   <span class="number">1.</span>(浮点数<span class="number">1</span>)   .(字符串连接符)   <span class="number">.9</span>(浮点数<span class="number">0.9</span>)</span><br><span class="line">所以在编译阶段生成的其实是  <span class="string">&quot;1&quot;</span>.<span class="string">&quot;0.9&quot;</span></span><br><span class="line">输出结果是<span class="number">10.9</span></span><br></pre></td></tr></table></figure>
 
-<p>看上面两个红色的配置：</p>
-<p><strong>open_eof_split：启用 EOF 自动分包</strong></p>
-<p>这个参数启用后，底层会从数据包中间查找 EOF，并拆分数据包。onReceive 每次仅收到一个以 EOF 字串结尾的数据包。</p>
-<p><strong>package_eof：设置 EOF 字符串。</strong></p>
-<p>这个配置需要与与 open_eof_check 或者 open_eof_split 配合使用，并且最大只允许传入 8 个字节的字符串。</p>
-<p>根据以上的配置进行实验：</p>
-<p>客户端发送两个包，分别是包1：123abc456a，包2：bc789abc</p>
-<p>服务端则触发了三个onReceive事件，收到的data分别是：123abc / 456abc / 789abc</p>
-<p>是不是很神奇，swoole底层根据package_eof配置设置的结束符帮我们把客户端发过来的数据包进行分包与合包，让我们在onRecieve业务层拿到的数据都是完整的业务数据包。但是，方便的同时带来的代价就是效率较低。open_eof_split这个配置让swoole需要遍历整个数据包的内容，查找 EOF，因此会消耗大量 CPU 资源。假设每个数据包为 2M，每秒 10000 个请求，这可能会产生 20G 条 CPU 字符匹配指令。</p>
-<p>为了解决这个问题，我们一般让swoole帮我们解决分包问题，合包由我们在业务代码层面进行处理。接下来，请大家往下阅读。</p>
-<p>2)只解决分包</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set([</span><br><span class="line">    <span class="string">&#x27;max_wait_time&#x27;</span>=&gt;<span class="number">60</span>,</span><br><span class="line">    <span class="string">&#x27;reload_async&#x27;</span>=&gt;<span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_worker_num&#x27;</span>=&gt;<span class="number">1</span>,</span><br><span class="line">    <span class="string">&#x27;task_max_request&#x27;</span>=&gt;<span class="number">100</span>,</span><br><span class="line">    <span class="string">&#x27;open_eof_check&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_eof&#x27;</span> =&gt; <span class="string">&quot;abc&quot;</span>,</span><br><span class="line">]);</span><br></pre></td></tr></table></figure>
+<h5 id="被人打死系列二："><a href="#被人打死系列二：" class="headerlink" title="被人打死系列二："></a>被人打死系列二：</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$a</span> = <span class="literal">true</span>;</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$a</span>) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;true&quot;</span>;</span><br><span class="line">&#125; <span class="keyword">else</span> label: &#123;</span><br><span class="line">	<span class="keyword">echo</span> <span class="string">&quot;false&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 正常来说，else后可以接一切statement，如果条件不成立，执行流就会跳到else后面的statement，比如while，switch等。但是label:会本身规约为一条statement，导致label变成了单独的一条语句，后面的大括号内容必执行</span></span><br><span class="line"><span class="comment">// 也可以理解为: else后面跟的foreach，switch等，只是因为单条语句去掉了最外层括号，label:也是一样，在IDE中ctrl + alt + l代码格式化，部分会进行自动转换有利于观察，为了不被打还是不要使用这种写法</span></span><br><span class="line"><span class="keyword">if</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="number">10</span>; <span class="variable">$i</span> ++) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="variable">$i</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>这里的两个红包配置，与上面不同的是这里用的是open_eof_check，而不是open_eof_split。</p>
-<p><strong>open_eof_check：打开 EOF 检测【默认值：false】</strong></p>
-<p>此选项将检测客户端连接发来的数据，<strong>当数据包结尾是指定的字符串时才会投递给 Worker 进程</strong>。否则会一直拼接数据包，直到超过缓存区或者超时才会中止。当出错时底层会认为是恶意连接，丢弃数据并强制关闭连接。</p>
-<p>注意：此配置仅对 STREAM(流式的) 类型的 Socket 有效，如 TCP 、Unix Socket Stream。EOF 检测不会从数据中间查找 eof 字符串，所以 Worker 进程可能会同时收到多个数据包。</p>
-<p>根据以上的配置进行实验：</p>
-<p>客户端发送两个包，分别是包1：123abc456a，包2：bc789abc</p>
-<p>服务端则触发了一个onReceive事件，收到的data是：123abc456abc789abc</p>
-<p><font color="red">看到与open_eof_split的区别没？我们在onRecieve收到的是多个业务数据包合并在一样的数据，swoole保证提交到业务层是一个或多个完整的数据包，我们需要在业务层用explode()进行拆分。虽然需要我们额外的拆分动作，但这一切都是值得的，因为swoole效率高出了好多，因为swoole只检查数据包结尾是否是指定的eof字符串。</font></p>
-<p><strong>2、固定包头+包体协议</strong></p>
-<p>固定包头的方法非常通用，在服务器端程序中经常能看到。这种协议的特点是一个数据包总是由包头 + 包体 2 部分组成。包头由一个字段指定了包体或整个包的长度，长度一般是使用 2 字节 /4 字节整数来表示。服务器收到包头后，可以根据长度值来精确控制需要再接收多少数据就是完整的数据包。Swoole 的配置可以很好的支持这种协议，可以灵活地设置 4 项参数应对所有情况。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$server</span> = <span class="keyword">new</span> Swoole\Server(<span class="string">&quot;0.0.0.0&quot;</span>, <span class="number">9501</span>);</span><br><span class="line"><span class="variable">$server</span>-&gt;set(<span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;open_length_check&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line">    <span class="string">&#x27;package_max_length&#x27;</span> =&gt; <span class="number">81920</span>,</span><br><span class="line">    <span class="string">&#x27;package_length_type&#x27;</span> =&gt; <span class="string">&#x27;n&#x27;</span>, <span class="comment">//see php pack()</span></span><br><span class="line">    <span class="string">&#x27;package_length_offset&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line">    <span class="string">&#x27;package_body_offset&#x27;</span> =&gt; <span class="number">2</span>,</span><br><span class="line">));</span><br></pre></td></tr></table></figure>
+<h5 id="被人打死系列三：print不是函数"><a href="#被人打死系列三：print不是函数" class="headerlink" title="被人打死系列三：print不是函数"></a>被人打死系列三：print不是函数</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">print</span>(<span class="string">&quot;1\n&quot;</span>) &amp;&amp; <span class="keyword">print</span>(<span class="string">&quot;2\n&quot;</span>) &amp;&amp; <span class="keyword">print</span>(<span class="string">&quot;3\n&quot;</span>) &amp;&amp; <span class="keyword">print</span>(<span class="string">&quot;4\n&quot;</span>)) &#123;&#125;</span><br><span class="line"><span class="comment">// 以上代码实际输出不是1234，而是4111</span></span><br><span class="line"><span class="comment">// print 是一个语法结构，不是函数，参数不要求有括号，即使有括号，也会在语法分析阶段被忽略，它只是一个永远的返回结果是1的表达式，所以以上的代码实质上是以下形式，如果想要输出1234，则需要对每一个print都使用()进行包裹</span></span><br><span class="line"><span class="keyword">if</span> (</span><br><span class="line">    <span class="keyword">print</span>(</span><br><span class="line">        <span class="string">&quot;1\n&quot;</span> &amp;&amp; <span class="keyword">print</span>(</span><br><span class="line">            <span class="string">&quot;2\n&quot;</span> &amp;&amp; <span class="keyword">print</span>(</span><br><span class="line">                <span class="string">&quot;3\n&quot;</span> &amp;&amp; <span class="keyword">print</span>(<span class="string">&quot;4\n&quot;</span>)</span><br><span class="line">            )</span><br><span class="line">        )</span><br><span class="line">    )</span><br><span class="line">) &#123;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<p>让我们一起了解这些配置的含义：</p>
-<p><strong>open_length_check：打开包长检测特性【默认值：false】</strong></p>
-<p>长度检测协议，只需要计算一次长度，数据处理仅进行指针偏移，性能非常高，推荐使用。</p>
-<p><strong>pack_max_length：设置最大数据包尺寸，单位为字节。【默认值：2M 即 2 * 1024 * 1024，最小值为 64K】（此参数不宜设置过大，否则会占用很大的内存）</strong></p>
-<p>－－open_length_check：当发现包长度超过 package_max_length，将直接丢弃此数据，并关闭连接，不会占用任何内存；<br>－－open_eof_check：因为无法事先得知数据包长度，所以收到的数据还是会保存到内存中，持续增长。当发现内存占用已超过 package_max_length 时，将直接丢弃此数据，并关闭连接；<br>－－open_http_protocol：GET 请求最大允许 8K，而且无法修改配置。POST 请求会检测 Content-Length，如果 Content-Length 超过 package_max_length，将直接丢弃此数据，发送 http 400 错误，并关闭连接；</p>
-<p><strong>package_length_type：长度值的类型，接受一个字符参数，与 PHP 的 pack 函数一致。</strong></p>
+<h5 id="蛋疼系列：strtotime"><a href="#蛋疼系列：strtotime" class="headerlink" title="蛋疼系列：strtotime"></a>蛋疼系列：strtotime</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">经常会有人被strtotime结合<span class="number">-1</span> month, +<span class="number">1</span> month, next month的时候搞得很困惑, 然后就会觉得这个函数有点不那么靠谱, 动不动就出问题. 用的时候就会很慌...</span><br><span class="line">这不, 刚刚就有人在微博上又问我:</span><br><span class="line"></span><br><span class="line">date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&#x27;-1 month&#x27;</span>, strtotime(<span class="string">&quot;2018-07-31&quot;</span>)));</span><br><span class="line">怎么输出是<span class="number">2018</span><span class="number">-07</span><span class="number">-01</span>?</span><br><span class="line"></span><br><span class="line">好的吧, 虽然这个问题看起来很迷惑, 但从内部逻辑上来说呢, 其实是<span class="string">&quot;对&quot;</span>的:</span><br><span class="line">我们来模拟下date内部的对于这种事情的处理逻辑:</span><br><span class="line"></span><br><span class="line"><span class="number">1.</span> 先做<span class="number">-1</span> month, 那么当前是<span class="number">07</span><span class="number">-31</span>, 减去一以后就是<span class="number">06</span><span class="number">-31.</span></span><br><span class="line"><span class="number">2.</span> 再做日期规范化, 因为<span class="number">6</span>月没有<span class="number">31</span>号, 所以就好像<span class="number">2</span>点<span class="number">60</span>等于<span class="number">3</span>点一样, <span class="number">6</span>月<span class="number">31</span>就等于了<span class="number">7</span>月<span class="number">1</span></span><br><span class="line">是不是逻辑很<span class="string">&quot;清晰&quot;</span>呢? 我们也可以手动验证第二个步骤, 比如:</span><br><span class="line"></span><br><span class="line">var_dump(date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&quot;2017-06-31&quot;</span>)));</span><br><span class="line"><span class="comment">//输出2017-07-01</span></span><br><span class="line">也就是说, 只要涉及到大小月的最后一天, 都可能会有这个迷惑，那怎么办呢?</span><br><span class="line">从PHP5<span class="number">.3</span>开始呢, date新增了一系列修正短语, 来明确这个问题, 那就是<span class="string">&quot;first day of&quot;</span> 和 <span class="string">&quot;last day of&quot;</span>, 也就是你可以限定好不要让date自动<span class="string">&quot;规范化&quot;</span>:</span><br><span class="line"></span><br><span class="line">var_dump(date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&quot;last day of -1 month&quot;</span>, strtotime(<span class="string">&quot;2017-03-31&quot;</span>))));</span><br><span class="line"><span class="comment">//输出2017-02-28</span></span><br><span class="line">var_dump(date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&quot;first day of +1 month&quot;</span>, strtotime(<span class="string">&quot;2017-08-31&quot;</span>))));</span><br><span class="line"><span class="comment">//输出2017-09-01</span></span><br><span class="line">var_dump(date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&quot;first day of next month&quot;</span>, strtotime(<span class="string">&quot;2017-01-31&quot;</span>))));</span><br><span class="line"><span class="comment">//输出2017-02-01</span></span><br><span class="line">var_dump(date(<span class="string">&quot;Y-m-d&quot;</span>, strtotime(<span class="string">&quot;last day of last month&quot;</span>, strtotime(<span class="string">&quot;2017-03-31&quot;</span>))));</span><br><span class="line"><span class="comment">//输出2017-02-28</span></span><br></pre></td></tr></table></figure>
+
 
     </div>
 
@@ -432,7 +392,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://wusit.github.io/2021/07/22/TCP%E7%B2%98%E5%8C%85/" title="Swoole Tcp粘包">https://wusit.github.io/2021/07/22/TCP粘包/</a>
+      <a href="https://wusit.github.io/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/" title="记开发过程的查缺补漏">https://wusit.github.io/2021/08/03/记PHP踩坑/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -441,22 +401,18 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/swoole/" rel="tag"><i class="fa fa-tag"></i> swoole</a>
-              <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/PHP/" rel="tag"><i class="fa fa-tag"></i> PHP</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2021/06/29/Minio%20Java%20Demo/" rel="prev" title="Minio Java Demo">
-                  <i class="fa fa-chevron-left"></i> Minio Java Demo
+                <a href="/2021/07/22/TCP%E7%B2%98%E5%8C%85/" rel="prev" title="Swoole Tcp粘包">
+                  <i class="fa fa-chevron-left"></i> Swoole Tcp粘包
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/" rel="next" title="记开发过程的查缺补漏">
-                  记开发过程的查缺补漏 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -588,7 +544,7 @@ NexT.utils.loadComments('#valine-comments', () => {
   NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
     new Valine(Object.assign({"enable":true,"appId":"ggDM6vXB7WGyhdRA1O1X2Ekc-MdYXbMMI","appKey":"zlzGlefJ7fKWtxg0legUyyHk","serverURLs":null,"placeholder":"来都来了，不撩一句嘛~","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":false,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
       el: '#valine-comments',
-      path: "/2021/07/22/TCP%E7%B2%98%E5%8C%85/",
+      path: "/2021/08/03/%E8%AE%B0PHP%E8%B8%A9%E5%9D%91/",
       serverURLs: "https://ggdm6vxb.api.lncldglobal.com"
     }));
   }, window.Valine);
